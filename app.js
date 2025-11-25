@@ -3,7 +3,8 @@ const express = require('express')
 const mongoose = require("mongoose")
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
-
+const customerRoutes = require('./routes/customersRoutes');
+const cors = require("cors");
 const app = express()
 
 // config json response
@@ -26,7 +27,8 @@ mongoose.connect("mongodb://localhost:27017/films")
     })
     .catch(err => console.log(err))
 
-
+app.use(cors());
 
 app.use('/auth', authRoutes);   // /auth/register e /auth/login
 app.use('/user', userRoutes);   // /user/:id
+app.use('/customers', customerRoutes);
