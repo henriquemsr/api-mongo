@@ -61,7 +61,7 @@ router.get('/', checkToken, async (req, res) => {
         const customers = await Customers.find(query)
             .skip((page - 1) * limit)
             .limit(limit)
-            .sort({ createdAt: -1 });
+            .sort({ name: 1 });
 
         res.status(200).json({
             success: true,

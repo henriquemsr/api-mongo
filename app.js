@@ -4,6 +4,7 @@ const mongoose = require("mongoose")
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const customerRoutes = require('./routes/customersRoutes');
+const taskRoutes = require('./routes/taskRoutes');
 const cors = require("cors");
 const app = express()
 
@@ -32,3 +33,4 @@ app.use(cors());
 app.use('/auth', authRoutes);   // /auth/register e /auth/login
 app.use('/user', userRoutes);   // /user/:id
 app.use('/customers', customerRoutes);
+app.use('/task', taskRoutes);
