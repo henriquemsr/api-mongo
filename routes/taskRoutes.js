@@ -33,42 +33,42 @@ router.post('/register', checkToken, async (req, res) => {
 router.get('/', checkToken, async (req, res) => {
 
     try {
-  let { page = 1, limit = 10, search = '' } = req.query;
+        let { page = 1, limit = 10, search = '' } = req.query;
 
-  page = Number(page);
-  limit = Number(limit);
+        page = Number(page);
+        limit = Number(limit);
 
-  const isNumber = !isNaN(search) && search.trim() !== "";
+        const isNumber = !isNaN(search) && search.trim() !== "";
 
-  const query = {
-    $or: [
-      { task_name: { $regex: search, $options: 'i' } },
-      { name_tutor: { $regex: search, $options: 'i' } },
-      { id_user: { $regex: search, $options: 'i' } },
-      ...(isNumber ? [{ value: Number(search) }] : []) // só filtra se for número
-    ]
-  };
+        const query = {
+            $or: [
+                { task_name: { $regex: search, $options: 'i' } },
+                { name_tutor: { $regex: search, $options: 'i' } },
+                { id_user: { $regex: search, $options: 'i' } },
+                ...(isNumber ? [{ value: Number(search) }] : []) // só filtra se for número
+            ]
+        };
 
-  const total = await Task.countDocuments(query);
+        const total = await Task.countDocuments(query);
 
-  const result = await Task.find(query)
-    .skip((page - 1) * limit)
-    .limit(limit)
-    .sort({ name: 1 });
+        const result = await Task.find(query)
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .sort({ name: 1 });
 
-  return res.status(200).json({
-    msg: "Sucesso",
-    success: true,
-    page,
-    totalPages: Math.ceil(total / limit),
-    totalResults: total,
-    result
-  });
+        return res.status(200).json({
+            msg: "Sucesso",
+            success: true,
+            page,
+            totalPages: Math.ceil(total / limit),
+            totalResults: total,
+            result
+        });
 
-} catch (error) {
-  console.log(error);
-  return res.status(500).json({ msg: "Erro ao buscar dados" });
-}
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ msg: "Erro ao buscar dados" });
+    }
 
 
 
@@ -105,6 +105,16 @@ router.put('/:id', async (req, res) => {
     } catch (error) {
         console.log(error)
         return res.status(500).json({ msg: "Algo deu errado" })
+    }
+})
+
+router.get('/byCustomer/:id', checkToken, async (req, res) => {
+    try {
+        const id = req.params.id;
+        const result = await Task.find({ id_user: id })
+        return res.status(200).json({ msg: "Sucesso!", result })
+    } catch (error) {
+        return res.status(500).json({ mgs: "Registro não encontrado" })
     }
 })
 

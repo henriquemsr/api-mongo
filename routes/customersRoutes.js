@@ -118,5 +118,24 @@ router.put('/:id', checkToken, async (req, res) => {
   }
 });
 
+router.delete('/:id', checkToken, async (req, res) => {
+  try {
+    const id = req.params.id;
+    
+    // await para resolver a Promise
+    const result = await Customers.findByIdAndDelete(id);
+
+    if (!result) {
+      return res.status(404).json({ msg: "Cliente não encontrado" });
+    }
+
+    return res.status(200).json({ msg: "Cliente deletado com sucesso!", result });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ msg: "Ocorreu um erro", error: error.message });
+  }
+});
+
+
 
 module.exports = router;
