@@ -90,5 +90,33 @@ router.get('/:id', checkToken, async (req, res) => {
         return res.status(500).json({ msg: "Ocorreu um erro" })
     }
 })
+router.put('/:id', checkToken, async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    const customer = await Customers.findByIdAndUpdate(id, req.body, {
+      new: true // retorna o documento atualizado
+    });
+
+    if (!customer) {
+      return res.status(404).json({ msg: "Cliente não encontrado" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      msg: "Cliente atualizado com sucesso!",
+      data: customer
+    });
+
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      msg: "Erro ao atualizar cliente",
+      error: error.message
+    });
+  }
+});
+
 
 module.exports = router;

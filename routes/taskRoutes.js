@@ -33,13 +33,44 @@ router.post('/register', checkToken, async (req, res) => {
 router.get('/', checkToken, async (req, res) => {
 
     try {
-        const result = await Task.find();
-        return res.status(200).json({ msg: "Sucesso", result })
+  let { page = 1, limit = 10, search = '' } = req.query;
 
-    } catch (error) {
-        console.log(error)
-        return res.status(500).json({ msg: "Erro ao buscar dados" })
-    }
+  page = Number(page);
+  limit = Number(limit);
+
+  const isNumber = !isNaN(search) && search.trim() !== "";
+
+  const query = {
+    $or: [
+      { task_name: { $regex: search, $options: 'i' } },
+      { name_tutor: { $regex: search, $options: 'i' } },
+      { id_user: { $regex: search, $options: 'i' } },
+      ...(isNumber ? [{ value: Number(search) }] : []) // só filtra se for número
+    ]
+  };
+
+  const total = await Task.countDocuments(query);
+
+  const result = await Task.find(query)
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .sort({ name: 1 });
+
+  return res.status(200).json({
+    msg: "Sucesso",
+    success: true,
+    page,
+    totalPages: Math.ceil(total / limit),
+    totalResults: total,
+    result
+  });
+
+} catch (error) {
+  console.log(error);
+  return res.status(500).json({ msg: "Erro ao buscar dados" });
+}
+
+
 
 })
 router.get('/:id', checkToken, async (req, res) => {
