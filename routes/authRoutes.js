@@ -73,11 +73,12 @@ router.post("/login", async (req, res) => {
             },
             secret,
         )
-        res.status(200).json({ msg: "autenticação realizada com sucesso", token })
+        res.status(200).json({ msg: "autenticação realizada com sucesso", token,id_user:user.id })
     } catch (error) {
         console.log(error);
         res.status(500).json({
-            msg: "Erro no servidor"
+            msg: "Erro no servidor",
+            
         })
 
     }

@@ -4,7 +4,7 @@ const Customers = require('../models/Customer')
 const checkToken = require('../middlewares/authMiddleware');
 router.post('/register', checkToken, async (req, res) => {
     try {
-        const { name, phone, pet_name } = req.body;
+        const { name, phone, pet } = req.body;
 
         // 🔍 Validação de campos obrigatórios
         if (!name || !phone) {
@@ -23,7 +23,7 @@ router.post('/register', checkToken, async (req, res) => {
             });
         }
 
-        const customer = new Customers({ name, phone, pet_name });
+        const customer = new Customers({ name, phone, pet });
         await customer.save();
 
         res.status(201).json({
