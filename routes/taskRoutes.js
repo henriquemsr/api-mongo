@@ -3,6 +3,35 @@ const router = express.Router();
 const Task = require('../models/Tasks');
 const checkToken = require('../middlewares/authMiddleware');
 
+
+
+router.get('/payments', checkToken, async (req, res) => {
+  try {
+    const result = await Task.aggregate([
+      {
+        $group: {
+          _id: '$pay',
+          totalQtd: { $sum: 1 },        // quantidade de tarefas
+          totalValor: { $sum: '$value' } // soma dos valores
+        }
+      }
+    ]);
+
+    // Formata o retorno para facilitar no front
+    const response = {
+      totalPagos: result.find(r => r._id === true)?.totalQtd || 0,
+      valorPagos: result.find(r => r._id === true)?.totalValor || 0,
+      totalNaoPagos: result.find(r => r._id === false)?.totalQtd || 0,
+      valorNaoPagos: result.find(r => r._id === false)?.totalValor || 0
+    };
+
+    return res.status(200).json(response);
+
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ msg: 'Erro no servidor' });
+  }
+});
 router.post('/register', checkToken, async (req, res) => {
     try {
         const { task_name, value, date, id_user, name_tutor } = req.body;
@@ -29,6 +58,81 @@ router.post('/register', checkToken, async (req, res) => {
         return res.status(500).json({ message: 'Erro ao cadastrar agenda' });
     }
 });
+router.get('/payment/total', checkToken, async (req, res) => {
+  try {
+    const result = await Task.aggregate([
+      {
+        $group: {
+          _id: '$pay',
+          totalValue: { $sum: '$value' },
+          totalUsers: { $sum: 1 }
+        }
+      }
+    ]);
+
+    let totalPagos = 0;
+    let totalNaoPagos = 0;
+    let totalGeral = 0;
+    let qtdPagos = 0;
+    let qtdNaoPagos = 0;
+
+    result.forEach(item => {
+      if (item._id === true) {
+        totalPagos = item.totalValue;
+        qtdPagos = item.totalUsers;
+      } else {
+        totalNaoPagos = item.totalValue;
+        qtdNaoPagos = item.totalUsers;
+      }
+    });
+
+    totalGeral = totalPagos + totalNaoPagos;
+
+    return res.status(200).json({
+      totalPagos,
+      totalNaoPagos,
+      totalGeral,
+      qtdPagos,
+      qtdNaoPagos
+    });
+
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ msg: 'Erro no servidor' });
+  }
+});
+
+router.get('/summary/payments', checkToken, async (req, res) => {
+  try {
+    const result = await Task.aggregate([
+      {
+        $group: {
+          _id: '$pay',
+          totalQtd: { $sum: 1 },        // quantidade de tarefas
+          totalValor: { $sum: '$value' } // soma dos valores
+        }
+      }
+    ]);
+
+    // Monta resposta
+    const response = {
+      totalPagos: result.find(r => r._id === true)?.totalQtd || 0,
+      valorPagos: result.find(r => r._id === true)?.totalValor || 0,
+      totalNaoPagos: result.find(r => r._id === false)?.totalQtd || 0,
+      valorNaoPagos: result.find(r => r._id === false)?.totalValor || 0,
+      totalGeral: result.reduce((acc, item) => acc + item.totalValor, 0),
+      totalQtdGeral: result.reduce((acc, item) => acc + item.totalQtd, 0)
+    };
+
+    return res.status(200).json(response);
+
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ msg: 'Erro no servidor' });
+  }
+});
+
+
 
 router.get('/', checkToken, async (req, res) => {
 
@@ -54,7 +158,7 @@ router.get('/', checkToken, async (req, res) => {
         const result = await Task.find(query)
             .skip((page - 1) * limit)
             .limit(limit)
-            .sort({ name: 1 });
+            .sort({ date: -1 });
 
         return res.status(200).json({
             msg: "Sucesso",
@@ -73,6 +177,24 @@ router.get('/', checkToken, async (req, res) => {
 
 
 })
+router.get('/payment/:param', checkToken, async (req, res) => {
+    const param = req.params.param;
+    let payValue = false;
+    if(param == 0){
+        payValue = false
+    }else{
+        payValue = true
+    }
+  try {
+    const result = await Task.find({ pay: payValue });
+
+    return res.status(200).json({ result });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ msg: 'Erro no servidor' });
+  }
+});
+
 router.get('/:id', checkToken, async (req, res) => {
     const { id } = req.params
 
@@ -90,11 +212,11 @@ router.get('/:id', checkToken, async (req, res) => {
 router.put('/:id', async (req, res) => {
 
     const { id } = req.params;
-    const { task_name, value, date } = req.body;
+    const { task_name, value, date, name_tutor, pay } = req.body;
     try {
         const updateTask = await Task.findByIdAndUpdate(
             id,
-            { task_name, value, date },
+            { task_name, value, date, name_tutor, pay },
             { new: true }
         );
         return res.status(200).json({
@@ -117,5 +239,25 @@ router.get('/byCustomer/:id', checkToken, async (req, res) => {
         return res.status(500).json({ mgs: "Registro não encontrado" })
     }
 })
+router.delete('/:id', checkToken, async (req, res) => {
+    try {
+        const id = req.params.id;
+
+        // await para resolver a Promise
+        const result = await Task.findByIdAndDelete(id);
+
+        if (!result) {
+            return res.status(404).json({ msg: "Agenda não encontrada" });
+        }
+
+        return res.status(200).json({ msg: "Agenda deletada com sucesso!", result });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({ msg: "Ocorreu um erro", error: error.message });
+    }
+});
+
+
+
 
 module.exports = router;
